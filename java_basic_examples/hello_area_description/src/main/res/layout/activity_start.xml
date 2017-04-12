@@ -3,40 +3,52 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:labelFor="@string/app_name"
-    android:orientation="vertical" >
+    android:orientation="vertical">
 
-    <ToggleButton
-        android:id="@+id/load_adf"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:textOff="@string/load_adf_off"
-        android:textOn="@string/load_adf_on"
-        android:textSize="15sp"
-        android:onClick="loadAdfClicked" />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <ToggleButton
-        android:id="@+id/learning_mode"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:textOff="@string/learning_mode_off"
-        android:textOn="@string/learning_mode_on"
-        android:textSize="15sp"
-        android:onClick="learningModeClicked" />
+        <ToggleButton
+            android:id="@+id/load_adf"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textOff="Load ADF Off"
+            android:textOn="Load ADF On"
+            android:textSize="15sp"
+            android:onClick="loadAdfClicked" />
 
-    <Button
-        android:id="@+id/start"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:text="@string/start_config"
-        android:textSize="15sp"
-        android:onClick="startClicked" />
+        <ToggleButton
+            android:id="@+id/learning_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textOff="Record ADF Off"
+            android:textOn="Record ADF On"
+            android:textSize="15sp"
+            android:onClick="learningModeClicked" />
 
-    <Button
-        android:id="@+id/AdfListView"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:text="@string/manage_adfs"
-        android:textSize="15sp"
-        android:onClick="adfListViewClicked" />
+        <Button
+            android:id="@+id/start"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/start_config"
+            android:textSize="15sp"
+            android:onClick="startClicked" />
+
+        <Button
+            android:id="@+id/AdfListView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/manage_adfs"
+            android:textSize="15sp"
+            android:onClick="adfListViewClicked" />
+
+        <TextView
+            android:text='Instructions:\n To record ADF top the "Record ADF" button.\n It will say if it is on or off.\n Then click start and do your thing.\n Then save the ADF with the button.\n \n Tap the Record ADF button to turn it off.\n Tap the Load ADF button to turn it on.\n Then tap start and do your thing.'
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/textView" />
+    </LinearLayout>
 
 </LinearLayout>

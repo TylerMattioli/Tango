@@ -19,6 +19,7 @@ package com.projecttango.examples.java.helloareadescription;
 import com.google.atap.tangoservice.Tango;
 import com.google.atap.tangoservice.Tango.OnTangoUpdateListener;
 import com.google.atap.tangoservice.TangoAreaDescriptionMetaData;
+import com.google.atap.tangoservice.TangoCameraPreview;
 import com.google.atap.tangoservice.TangoConfig;
 import com.google.atap.tangoservice.TangoCoordinateFramePair;
 import com.google.atap.tangoservice.TangoErrorException;
@@ -32,12 +33,17 @@ import com.google.atap.tangoservice.TangoXyzIjData;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.hardware.camera2.*;
 
 import java.util.ArrayList;
 
@@ -52,9 +58,13 @@ public class HelloAreaDescriptionActivity extends Activity implements
     private static final String TAG = HelloAreaDescriptionActivity.class.getSimpleName();
     private static final int SECS_TO_MILLISECS = 1000;
     private Tango mTango;
+    private SurfaceView livefeed;
     private TangoConfig mConfig;
     private TextView mUuidTextView;
     private TextView mRelocalizationTextView;
+    private TextView mCoordsTextView;
+    private TextView yDestTextView, xDestTextView, xCurTextView, yCurTextView, directionsTextView;
+    private TextView Rotationx, Rotationy, Rotationz;
 
     private Button mSaveAdfButton;
 
@@ -71,6 +81,10 @@ public class HelloAreaDescriptionActivity extends Activity implements
     private static final double UPDATE_INTERVAL_MS = 100.0;
 
     private final Object mSharedLock = new Object();
+
+    private float xCoord, yCoord, targetXCoord = 0, targetYCoord = 0;
+    private float xRote, yRote, zRote;
+    private String orientation, direction, rotation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -157,6 +171,16 @@ public class HelloAreaDescriptionActivity extends Activity implements
         mSaveAdfButton = (Button) findViewById(R.id.save_adf_button);
         mUuidTextView = (TextView) findViewById(R.id.adf_uuid_textview);
         mRelocalizationTextView = (TextView) findViewById(R.id.relocalization_textview);
+        mCoordsTextView = (TextView) findViewById(R.id.CoordsTextView);
+        xDestTextView = (TextView) findViewById(R.id.XEditText);
+        yDestTextView = (TextView) findViewById(R.id.YEditText);
+        xCurTextView = (TextView) findViewById(R.id.XCurEditText);
+        yCurTextView = (TextView) findViewById(R.id.YCurEditText);
+        Rotationx = (TextView) findViewById(R.id.Rotationx);
+        Rotationy = (TextView) findViewById(R.id.Rotationy);
+        Rotationz = (TextView) findViewById(R.id.Rotationz);
+        directionsTextView = (TextView) findViewById(R.id.DirEditText);
+        livefeed = (SurfaceView) findViewById(R.id.livefeed);
 
         if (isLearningMode) {
             // Disable save ADF button until Tango relocalizes to the current ADF.
@@ -207,6 +231,7 @@ public class HelloAreaDescriptionActivity extends Activity implements
         return config;
     }
 
+
     /**
      * Set up the callback listeners for the Tango Service and obtain other parameters required
      * after Tango connection.
@@ -229,6 +254,9 @@ public class HelloAreaDescriptionActivity extends Activity implements
 
             @Override
             public void onPoseAvailable(TangoPoseData pose) {
+                logPose(pose);
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
                 // Make sure to have atomic access to Tango data so that UI loop doesn't interfere
                 // while Pose call back is updating the data.
                 synchronized (mSharedLock) {
@@ -262,6 +290,23 @@ public class HelloAreaDescriptionActivity extends Activity implements
                                 mRelocalizationTextView.setText(mIsRelocalized ?
                                         getString(R.string.localized) :
                                         getString(R.string.not_localized));
+                                xCurTextView.setText(""+ xCoord);
+                                yCurTextView.setText(""+ yCoord);
+                                if(yDestTextView.getText().length() > 0 && yDestTextView.getText().equals("-") == false) {
+                                    try {
+                                        targetXCoord = Float.parseFloat(xDestTextView.getText().toString());
+                                        targetYCoord = Float.parseFloat(yDestTextView.getText().toString());
+                                    }catch (Exception e) {
+                                        // nathin.
+
+                                    }
+                                }
+                                mCoordsTextView.setText(rotation);
+                                directionsTextView.setText(direction);
+                                Rotationx.setText(""+xRote);
+                                Rotationy.setText(""+yRote);
+                                Rotationz.setText(""+zRote);
+                                livefeed.setBackgroundColor(Color.DKGRAY);
                             }
                         }
                     });
@@ -304,6 +349,148 @@ public class HelloAreaDescriptionActivity extends Activity implements
     @Override
     public void onAdfNameCancelled() {
         // Continue running.
+    }
+
+    private void logPose(TangoPoseData pose) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        float translation[] = pose.getTranslationAsFloats();
+        xCoord = (translation[0] * 10);
+        yCoord = (translation[1] * 10);
+        stringBuilder.append("Position: " +
+                "x: " + translation[0] + ", y: " + translation[1] + ", z: " + translation[2]);
+
+
+        float orientation[] = pose.getRotationAsFloats();
+        this.orientation = (". Orientation: " +
+                Math.round(orientation[0]*100) + ", " + Math.round(orientation[1]*100) + ", " +
+                Math.round(orientation[2]*100) + ", " + Math.round(orientation[3]*100));
+
+        double rotation[] = pose.rotation;
+        xRote = (float)(rotation[0] * 10);
+        yRote = (float)(rotation[1] * 10);
+        zRote = (float)(rotation[2] * 10);
+        this.rotation = ("Rotation: " + Math.round(rotation[0] * 10) + ", " + Math.round(rotation[1] * 10) + ", " + Math.round(rotation[2] * 10));
+
+//        //straight
+//        if ((xRote == 6 || xRote == 7) && (yRote >= -1 && yRote <= 1)){
+//            if (targetYCoord > yCoord){
+//                direction = "Step Forward";
+//            }
+//            if (targetYCoord < yCoord){
+//                direction = "Step Backward";
+//            }
+//            if (targetXCoord > xCoord){
+//                direction = "Step Right";
+//            }
+//            if (targetXCoord < xCoord){
+//                direction = "Step Left";
+//            }
+//        }
+//
+//        //right
+//        if ((xRote == 4 || xRote == 5) && (yRote <= -4 && yRote <= -6)){
+//            if (targetXCoord > xCoord){
+//                direction = "Step Forward";
+//            }
+//            if (targetXCoord < xCoord){
+//                direction = "Step Backward";
+//            }
+//            if (targetYCoord > yCoord){
+//                direction = "Step Left";
+//            }
+//            if (targetYCoord < yCoord){
+//                direction = "Step Right";
+//            }
+//        }
+//
+//        //left
+//        if ((xRote == 4 || xRote == 5) && (yRote <= 6 && yRote >= 4)){
+//            if (targetXCoord > xCoord){
+//                direction = "Step Backward";
+//            }
+//            if (targetXCoord < xCoord){
+//                direction = "Step Forward";
+//            }
+//            if (targetYCoord > yCoord){
+//                direction = "Step Right";
+//            }
+//            if (targetYCoord < yCoord){
+//                direction = "Step Left";
+//            }
+//        }
+//
+//        //back
+//        if ((xRote == 0 || xRote == 1) && (yRote == 7 || yRote == -7)){
+//            if (targetYCoord > yCoord){
+//                direction = "Step Backward";
+//            }
+//            if (targetYCoord < yCoord){
+//                direction = "Step Forward";
+//            }
+//            if (targetXCoord > xCoord){
+//                direction = "Step Left";
+//            }
+//            if (targetXCoord < xCoord){
+//                direction = "Step Right";
+//            }
+//        }
+//        if (xCoord == targetXCoord && yCoord == targetYCoord){
+//            direction = "Congrats";
+//        }
+
+
+
+        if ((int)(xCoord) == targetXCoord && (int)(yCoord) == targetYCoord){
+            direction = "Congrats";
+        }
+        else if(Math.abs(xCoord - targetXCoord) < Math.abs(yCoord - targetYCoord)) {
+            // Go towards target Y
+            if(yCoord < targetYCoord) {
+                if(yRote < 2 && yRote > -2 ) {
+                    direction = "Forwards (+Y)";
+                }
+                else if (yRote >= 2) {
+                    direction = "Right (+Y)";
+                } else {
+                    direction = "Left (+Y)";
+                }
+            } else {
+                if(yRote > 6 || yRote < -6 ) {
+                    direction = "Forwards (-Y)";
+                }
+                else if (yRote <= 6) {
+                    direction = "Left (-Y)";
+                } else {
+                    direction = "Right (-Y)";
+                }
+            }
+
+        } else if(Math.abs(xCoord - targetXCoord) > Math.abs(yCoord - targetYCoord)) {
+            // Go towards target X
+            if(xCoord < targetXCoord) {
+                if (yRote > -5.5 && yRote < -3.5) {
+                    // turn left
+                    direction = "Forwards (+X)";
+                } else if (yRote >= -3.5) {
+                    direction = "Right (+X)";
+                } else {
+                    direction = "Left (+X)";
+                }
+            } else {
+                if (yRote < 5.5 && yRote > 3.5) {
+                    // turn left
+                    direction = "Forwards (-X)";
+                } else if (yRote >= 5.5) {
+                    direction = "Right (-X)";
+                } else {
+                    direction = "Left (-" +
+                            "X)";
+                }
+            }
+        }
+
+        Log.i(TAG, stringBuilder.toString());
     }
 
     /**

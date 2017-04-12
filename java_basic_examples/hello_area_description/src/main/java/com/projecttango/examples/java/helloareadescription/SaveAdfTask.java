@@ -23,6 +23,10 @@ import com.google.atap.tangoservice.TangoInvalidException;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.os.Environment;
+import android.widget.Toast;
+
+import java.io.File;
 
 /**
  * Saves the ADF on a background thread and shows a progress dialog while
@@ -43,8 +47,10 @@ public class SaveAdfTask extends AsyncTask<Void, Integer, String> {
     SaveAdfDialog mProgressDialog;
     Tango mTango;
     String mAdfName;
+    private String mAppSpaceAdfFolder;
 
     SaveAdfTask(Context context, SaveAdfListener callbackListener, Tango tango, String adfName) {
+        mAppSpaceAdfFolder = getAppSpaceAdfFolder();
         mContext = context;
         mCallbackListener = callbackListener;
         mTango = tango;
@@ -95,6 +101,16 @@ public class SaveAdfTask extends AsyncTask<Void, Integer, String> {
         }
     }
 
+    private String getAppSpaceAdfFolder() {
+        String mapsFolder = Environment.getExternalStorageDirectory().getAbsolutePath()
+                + File.separator + "Maps";
+        File file = new File(mapsFolder);
+        if (!file.exists()) {
+            file.mkdirs();
+        }
+        return mapsFolder;
+    }
+
     /**
      * Dismisses the progress dialog and call the activity.
      */
@@ -109,6 +125,14 @@ public class SaveAdfTask extends AsyncTask<Void, Integer, String> {
             } else {
                 mCallbackListener.onSaveAdfSuccess(mAdfName, adfUuid);
             }
+        }
+    }
+
+    private void exportAdf(String uuid) {
+        try {
+            mTango.exportAreaDescriptionFile(uuid, mAppSpaceAdfFolder);
+        } catch (TangoErrorException e) {
+        // do nothing
         }
     }
 }

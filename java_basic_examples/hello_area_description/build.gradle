@@ -33,5 +33,6 @@ if (project.hasProperty("Tango.catkin_devel_prefix")) {
 
 
 dependencies {
+    compile 'com.google.android.gms:play-services:4.0.30'
     compile fileTree(dir: external_lib_prefix + '/jar', include: ['**/*.jar'])
 }
